@@ -56,7 +56,7 @@ select
 	floor(sum(income)) as income
 from a
 group by seller, day_of_week, weekday_number
-order by seller, weekday_number;
+order by weekday_number, seller;
 
 -- age_groups возрастные группы
 with a as (
@@ -72,7 +72,7 @@ with a as (
 )
 select 
 	age_category,
-	count(age_category)
+	count(age_category) as age_count
 from a 
 group by age_category
 order by age_category;
@@ -82,7 +82,7 @@ order by age_category;
 select
     TO_CHAR(sale_date, 'YYYY-MM') as selling_month,
     COUNT(distinct customer_id) as total_customers,
-    SUM(quantity * price) as income
+    floor(SUM(quantity * price)) as income
 from sales s
 join products p on s.product_id = p.product_id
 group by selling_month
