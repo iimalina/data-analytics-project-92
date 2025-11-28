@@ -3,7 +3,7 @@ SELECT COUNT(customers.customer_id) AS customers_count
 FROM customers;
 
 
--- TOP_10_TOTAL_INCOME ТОП-10 ЛУЧШИХ ПРОДАВЦОВ ПО СУММАРНОЙ ВЫРУЧКЕ
+-- ТОП-10 ЛУЧШИХ ПРОДАВЦОВ ПО ВЫРУЧКЕ
 SELECT
     CONCAT(employees.first_name, ' ', employees.last_name) AS seller,
     FLOOR(COUNT(sales.quantity)) AS operations,
@@ -16,7 +16,7 @@ ORDER BY income DESC
 LIMIT 10;
 
 
--- LOWEST_AVERAGE_INCOME ПРОДАВЦЫ, ЧЬЯ СРЕДНЯЯ ВЫРУЧКА ЗА СДЕЛКУ МЕНЬШЕ СРЕДНЕЙ ПО ВСЕМ ПРОДАВЦАМ
+-- ПРОДАВЦЫ С НИЗКОЙ СРЕДНЕЙ ВЫРУЧКОЙ
 WITH prod AS (
     SELECT
         sales.sales_person_id,
@@ -32,7 +32,7 @@ overall AS (
 )
 
 SELECT
-    employees.first_name || ' ' || employees.last_name AS seller,
+    CONCAT(employees.first_name, ' ', employees.last_name) AS seller,
     FLOOR(prod.avg_amount) AS average_income
 FROM prod
 JOIN employees ON prod.sales_person_id = employees.employee_id
@@ -41,7 +41,7 @@ WHERE prod.avg_amount < overall.overall_avg
 ORDER BY prod.avg_amount;
 
 
--- DAY_OF_THE_WEEK_INCOME ВЫРУЧКА ПО ДНЯМ НЕДЕЛИ ДЛЯ КАЖДОГО ПРОДАВЦА
+-- ВЫРУЧКА ПО ДНЯМ НЕДЕЛИ
 WITH a AS (
     SELECT
         sales.sales_person_id,
@@ -49,7 +49,7 @@ WITH a AS (
         sales.sale_date,
         LOWER(TO_CHAR(sales.sale_date, 'FMDay')) AS day_of_week,
         EXTRACT(ISODOW FROM sales.sale_date) AS weekday_number,
-        employees.first_name || ' ' || employees.last_name AS seller,
+        CONCAT(employees.first_name, ' ', employees.last_name) AS seller,
         sales.quantity * products.price AS income
     FROM sales
     JOIN products ON sales.product_id = products.product_id
@@ -65,7 +65,7 @@ GROUP BY seller, day_of_week, weekday_number
 ORDER BY weekday_number, seller;
 
 
--- AGE_GROUPS ВОЗРАСТНЫЕ ГРУППЫ
+-- ВОЗРАСТНЫЕ ГРУППЫ
 WITH a AS (
     SELECT
         CASE
@@ -85,7 +85,7 @@ GROUP BY age_category
 ORDER BY age_category;
 
 
--- CUSTOMERS_BY_MONTH КОЛИЧЕСТВО УНИКАЛЬНЫХ ПОКУПАТЕЛЕЙ И ВЫРУЧКА
+-- КОЛИЧЕСТВО УНИКАЛЬНЫХ КЛИЕНТОВ И ВЫРУЧКА ПО МЕСЯЦАМ
 SELECT
     TO_CHAR(sales.sale_date, 'YYYY-MM') AS selling_month,
     COUNT(DISTINCT sales.customer_id) AS total_customers,
@@ -96,25 +96,28 @@ GROUP BY selling_month
 ORDER BY selling_month;
 
 
--- SPECIAL_OFFER КЛИЕНТЫ, У КОТОРЫХ ПЕРВАЯ ПОКУПКА БЫЛА ПО АКЦИИ (PRICE = 0)
+-- КЛИЕНТЫ С ПЕРВОЙ ПОКУПКОЙ ПО АКЦИИ
 WITH a AS (
     SELECT
         sales.customer_id,
         sales.sales_person_id,
         sales.sale_date,
         sales.product_id,
-        ROW_NUMBER() OVER (PARTITION BY sales.customer_id ORDER BY sales.sale_date) AS row_number
+        ROW_NUMBER() OVER (
+            PARTITION BY sales.customer_id
+            ORDER BY sales.sale_date
+        ) AS row_number
     FROM sales
 )
 
 SELECT
-    customers.first_name || ' ' || customers.last_name AS customer,
+    CONCAT(customers.first_name, ' ', customers.last_name) AS customer,
     a.sale_date,
-    employees.first_name || ' ' || employees.last_name AS seller
+    CONCAT(employees.first_name, ' ', employees.last_name) AS seller
 FROM a
 JOIN products ON a.product_id = products.product_id
-JOIN employees ON employees.employee_id = a.sales_person_id
-JOIN customers ON customers.customer_id = a.customer_id
+JOIN employees ON a.sales_person_id = employees.employee_id
+JOIN customers ON a.customer_id = customers.customer_id
 WHERE a.row_number = 1
   AND products.price = 0
 ORDER BY customers.customer_id;
