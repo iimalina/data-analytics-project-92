@@ -9,9 +9,9 @@ SELECT
     FLOOR(COUNT(s.quantity)) AS operations,
     FLOOR(SUM(s.quantity * p.price)) AS income
 FROM sales AS s
-JOIN products AS p
+INNER JOIN products AS p
     ON s.product_id = p.product_id
-JOIN employees AS e
+INNER JOIN employees AS e
     ON s.sales_person_id = e.employee_id
 GROUP BY e.first_name, e.last_name
 ORDER BY income DESC
@@ -24,7 +24,7 @@ WITH prod AS (
         s.sales_person_id,
         AVG(s.quantity * p.price) AS avg_amount
     FROM sales AS s
-    JOIN products AS p
+    INNER JOIN products AS p
         ON s.product_id = p.product_id
     GROUP BY s.sales_person_id
 ),
@@ -38,7 +38,7 @@ SELECT
     CONCAT(e.first_name, ' ', e.last_name) AS seller,
     FLOOR(prod.avg_amount) AS average_income
 FROM prod
-JOIN employees AS e
+INNER JOIN employees AS e
     ON prod.sales_person_id = e.employee_id
 CROSS JOIN overall AS o
 WHERE prod.avg_amount < o.overall_avg
@@ -56,9 +56,9 @@ WITH a AS (
         CONCAT(e.first_name, ' ', e.last_name) AS seller,
         s.quantity * p.price AS income
     FROM sales AS s
-    JOIN products AS p
+    INNER JOIN products AS p
         ON s.product_id = p.product_id
-    JOIN employees AS e
+    INNER JOIN employees AS e
         ON s.sales_person_id = e.employee_id
 )
 
@@ -97,7 +97,7 @@ SELECT
     COUNT(DISTINCT s.customer_id) AS total_customers,
     FLOOR(SUM(s.quantity * p.price)) AS income
 FROM sales AS s
-JOIN products AS p
+INNER JOIN products AS p
     ON s.product_id = p.product_id
 GROUP BY selling_month
 ORDER BY selling_month;
@@ -118,16 +118,16 @@ WITH a AS (
 )
 
 SELECT
-    CONCAT(c.first_name, ' ', c.last_name) AS customer,
     a.sale_date,
+    CONCAT(c.first_name, ' ', c.last_name) AS customer,
     CONCAT(e.first_name, ' ', e.last_name) AS seller
 FROM a
-JOIN products AS p
+INNER JOIN products AS p
     ON a.product_id = p.product_id
-JOIN employees AS e
+INNER JOIN employees AS e
     ON a.sales_person_id = e.employee_id
-JOIN customers AS c
+INNER JOIN customers AS c
     ON a.customer_id = c.customer_id
-WHERE a.row_number = 1
-  AND p.price = 0
+WHERE
+    a.row_number = 1 AND p.price = 0
 ORDER BY c.customer_id;
