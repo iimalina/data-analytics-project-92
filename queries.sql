@@ -1,6 +1,6 @@
 -- ОБЩЕЕ КОЛИЧЕСТВО КЛИЕНТОВ
-SELECT COUNT(customers.customer_id) AS customers_count
-FROM customers;
+SELECT COUNT(c.customer_id) AS customers_count
+FROM customers AS c;
 
 
 -- ТОП-10 ЛУЧШИХ ПРОДАВЦОВ ПО ВЫРУЧКЕ
@@ -8,9 +8,11 @@ SELECT
     CONCAT(e.first_name, ' ', e.last_name) AS seller,
     FLOOR(COUNT(s.quantity)) AS operations,
     FLOOR(SUM(s.quantity * p.price)) AS income
-FROM sales s
-JOIN products p ON s.product_id = p.product_id
-JOIN employees e ON s.sales_person_id = e.employee_id
+FROM sales AS s
+JOIN products AS p
+    ON s.product_id = p.product_id
+JOIN employees AS e
+    ON s.sales_person_id = e.employee_id
 GROUP BY e.first_name, e.last_name
 ORDER BY income DESC
 LIMIT 10;
@@ -21,8 +23,9 @@ WITH prod AS (
     SELECT
         s.sales_person_id,
         AVG(s.quantity * p.price) AS avg_amount
-    FROM sales s
-    JOIN products p ON s.product_id = p.product_id
+    FROM sales AS s
+    JOIN products AS p
+        ON s.product_id = p.product_id
     GROUP BY s.sales_person_id
 ),
 
@@ -35,8 +38,9 @@ SELECT
     CONCAT(e.first_name, ' ', e.last_name) AS seller,
     FLOOR(prod.avg_amount) AS average_income
 FROM prod
-JOIN employees e ON prod.sales_person_id = e.employee_id
-CROSS JOIN overall o
+JOIN employees AS e
+    ON prod.sales_person_id = e.employee_id
+CROSS JOIN overall AS o
 WHERE prod.avg_amount < o.overall_avg
 ORDER BY prod.avg_amount;
 
@@ -51,9 +55,11 @@ WITH a AS (
         EXTRACT(ISODOW FROM s.sale_date) AS weekday_number,
         CONCAT(e.first_name, ' ', e.last_name) AS seller,
         s.quantity * p.price AS income
-    FROM sales s
-    JOIN products p ON s.product_id = p.product_id
-    JOIN employees e ON s.sales_person_id = e.employee_id
+    FROM sales AS s
+    JOIN products AS p
+        ON s.product_id = p.product_id
+    JOIN employees AS e
+        ON s.sales_person_id = e.employee_id
 )
 
 SELECT
@@ -73,7 +79,7 @@ WITH a AS (
             WHEN c.age BETWEEN 26 AND 40 THEN '26-40'
             ELSE '40+'
         END AS age_category
-    FROM customers c
+    FROM customers AS c
     WHERE c.age >= 16
 )
 
@@ -90,8 +96,9 @@ SELECT
     TO_CHAR(s.sale_date, 'YYYY-MM') AS selling_month,
     COUNT(DISTINCT s.customer_id) AS total_customers,
     FLOOR(SUM(s.quantity * p.price)) AS income
-FROM sales s
-JOIN products p ON s.product_id = p.product_id
+FROM sales AS s
+JOIN products AS p
+    ON s.product_id = p.product_id
 GROUP BY selling_month
 ORDER BY selling_month;
 
@@ -107,7 +114,7 @@ WITH a AS (
             PARTITION BY s.customer_id
             ORDER BY s.sale_date
         ) AS row_number
-    FROM sales s
+    FROM sales AS s
 )
 
 SELECT
@@ -115,9 +122,12 @@ SELECT
     a.sale_date,
     CONCAT(e.first_name, ' ', e.last_name) AS seller
 FROM a
-JOIN products p ON a.product_id = p.product_id
-JOIN employees e ON a.sales_person_id = e.employee_id
-JOIN customers c ON a.customer_id = c.customer_id
+JOIN products AS p
+    ON a.product_id = p.product_id
+JOIN employees AS e
+    ON a.sales_person_id = e.employee_id
+JOIN customers AS c
+    ON a.customer_id = c.customer_id
 WHERE a.row_number = 1
   AND p.price = 0
 ORDER BY c.customer_id;
